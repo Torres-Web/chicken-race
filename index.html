@@ -64,6 +64,19 @@
             box-shadow: 0 0 40px var(--neon-red) inset, 0 0 40px var(--neon-red);
         }
         
+        @keyframes rainbow {
+            0% { color: #ff0000; }
+            17% { color: #ff8000; }
+            33% { color: #ffff00; }
+            50% { color: #00ff00; }
+            67% { color: #0000ff; }
+            84% { color: #4b0082; }
+            100% { color: #8f00ff; }
+        }
+        .text-rainbow {
+            animation: rainbow 2s infinite;
+        }
+
         @keyframes heartbeat {
             0% { transform: scale(1); }
             20% { transform: scale(1.1); }
@@ -112,9 +125,9 @@
         <h1 class="text-4xl md:text-5xl font-digital font-black mb-2 neon-text-blue text-center leading-tight">TIME CHICKEN<br>RACE</h1>
         <p class="text-gray-400 mb-12 text-sm text-center">ピタリ賞を狙え！体内時計バトル</p>
         
-        <div class="flex flex-col gap-6 w-full px-4">
-            <button onclick="navTo('host-setup')" class="py-4 rounded-xl font-bold text-xl btn-neon w-full tracking-wider">ホストになる<br><span class="text-xs font-normal">（プロジェクター投影用）</span></button>
-            <button onclick="showModal('参加方法', 'スマホの標準カメラアプリを開いて、プロジェクターに映し出されたQRコードを読み取ってください！')" class="py-4 rounded-xl font-bold text-xl btn-neon w-full tracking-wider border-[var(--neon-green)] text-[var(--neon-green)]" style="border-color: #ff00ff; color: #ff00ff; box-shadow: 0 0 10px #ff00ff inset, 0 0 10px #ff00ff;">参加する<br><span class="text-xs font-normal">（スマホ操作用）</span></button>
+        <div class="flex flex-col gap-6 w-full px-4 text-center">
+            <p class="text-yellow-400 text-sm mb-2 border border-yellow-400 p-2 rounded">※この画面はプロジェクター投影用の親機画面です。<br>参加者はQRコードを読み取ってください。</p>
+            <button onclick="navTo('host-setup')" class="py-4 rounded-xl font-bold text-xl btn-neon w-full tracking-wider">ホスト設定へ進む</button>
         </div>
     </div>
 
@@ -158,7 +171,18 @@
 
 
     <!-- ==================== GUEST SCREENS ==================== -->
+    <!-- 名前入力画面 (NEW) -->
+    <div id="screen-guest-name" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center">
+        <h2 class="text-3xl font-bold mb-8 neon-text-green">エントリー</h2>
+        <div class="w-full max-w-sm bg-gray-900 p-6 rounded-2xl neon-box">
+            <p class="text-gray-300 mb-4">あなたの名前（ニックネーム）を入力してください</p>
+            <input type="text" id="guest-name-input" placeholder="例: ヤマダ" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-4 text-center text-xl text-white focus:outline-none focus:border-[var(--neon-green)] mb-6" maxlength="10">
+            <button onclick="submitGuestName()" class="w-full py-4 rounded-xl font-bold text-xl btn-neon">準備完了</button>
+        </div>
+    </div>
+
     <div id="screen-guest-ready" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center">
+        <h2 class="text-2xl font-bold mb-2 text-gray-300"><span id="display-player-name" class="neon-text-green text-3xl"></span> 選手</h2>
         <h2 class="text-3xl font-bold mb-4 neon-text-green">準備完了！</h2>
         <p class="text-xl text-gray-300 mb-8">目標タイム: <span id="ready-target-display" class="font-digital text-3xl text-white">10.00</span> 秒</p>
         
@@ -182,22 +206,22 @@
         <p class="mt-12 text-sm text-gray-500 text-center">※3秒経過すると時間が隠れます。<br>感覚を研ぎ澄ませ！</p>
     </div>
 
-    <div id="screen-guest-finished" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center">
-        <h2 class="text-4xl font-black mb-4 text-white">RESULT</h2>
+    <div id="screen-guest-finished" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center transition-colors duration-500">
+        <h2 id="result-title" class="text-4xl font-black mb-4 text-white">RESULT</h2>
         
         <div class="mb-8">
-            <p class="text-gray-400 text-lg mb-1">あなたの記録</p>
-            <h1 id="result-time" class="text-7xl font-digital font-black neon-text-blue mb-2">10.00s</h1>
-            <p id="result-diff" class="text-2xl font-bold"></p>
+            <p class="text-gray-200 text-xl mb-1"><span id="result-player-name" class="font-bold text-3xl"></span> の記録</p>
+            <h1 id="result-time" class="text-7xl md:text-8xl font-digital font-black mb-2 drop-shadow-lg">10.00s</h1>
+            <p id="result-diff" class="text-3xl font-bold"></p>
         </div>
 
-        <div class="p-6 border-2 border-dashed border-gray-600 rounded-xl bg-gray-900 bg-opacity-50">
-            <p class="text-lg text-gray-400 mb-2">司会者の指示があるまで</p>
-            <p class="text-2xl font-bold text-yellow-400 animate-pulse">この画面のまま待機！</p>
+        <div id="wait-message" class="p-6 border-4 border-dashed rounded-xl bg-opacity-50">
+            <p class="text-xl font-bold text-white mb-2">司会者の指示があるまで</p>
+            <p class="text-3xl font-black text-white animate-pulse">この画面のまま待機！</p>
         </div>
 
-        <button onclick="navTo('guest-ready')" class="mt-8 py-3 px-8 rounded-full border border-gray-500 text-gray-300 hover:bg-gray-800 transition">もう一度挑戦する</button>
-        <button onclick="navTo('top')" class="mt-4 text-gray-500 underline text-sm">トップに戻る</button>
+        <button onclick="navTo('guest-ready')" class="mt-8 py-4 px-8 rounded-full border-2 border-white text-white font-bold hover:bg-white hover:text-black transition w-full max-w-sm">もう一度挑戦する</button>
+        <button onclick="navTo('top')" class="mt-6 text-gray-300 underline text-sm">トップに戻る</button>
     </div>
 
 
@@ -206,6 +230,7 @@
         let targetTime = 10.0;
         
         // --- ゲスト用ステータス ---
+        let guestName = "";
         let stopwatchStartTime = 0;
         let stopwatchRAF = null;
         let myStoppedTime = null;
@@ -303,10 +328,24 @@
                 targetTime = parseFloat(params.get('t'));
                 if (isNaN(targetTime)) targetTime = 10.0;
                 
-                document.getElementById('ready-target-display').innerText = targetTime.toFixed(2);
-                navTo('guest-ready');
+                navTo('guest-name');
             }
         }
+
+        window.submitGuestName = () => {
+            const inputEl = document.getElementById('guest-name-input');
+            const name = inputEl.value.trim();
+            if(name === "") {
+                showModal("エラー", "名前を入力してください！");
+                return;
+            }
+            guestName = name;
+            document.getElementById('display-player-name').innerText = guestName;
+            document.getElementById('result-player-name').innerText = guestName;
+            
+            document.getElementById('ready-target-display').innerText = targetTime.toFixed(2);
+            navTo('guest-ready');
+        };
 
         window.startGuestTimer = () => {
             navTo('guest-playing');
@@ -372,21 +411,49 @@
             
             setTimeout(() => {
                 navTo('guest-finished');
-                document.getElementById('result-time').innerText = `${myStoppedTime.toFixed(2)}s`;
                 
+                const finishedScreen = document.getElementById('screen-guest-finished');
+                const titleEl = document.getElementById('result-title');
+                const resultTimeEl = document.getElementById('result-time');
                 const diffEl = document.getElementById('result-diff');
-                diffEl.innerText = `誤差: ${diff.toFixed(2)}秒`;
+                const waitMsgEl = document.getElementById('wait-message');
+
+                resultTimeEl.innerText = `${myStoppedTime.toFixed(2)}s`;
                 
-                // 誤差による色分け演出
+                // クラスを一旦リセット（色を引き継がないようにするため）
+                finishedScreen.className = "screen flex-col items-center justify-center w-full h-screen px-4 text-center transition-colors duration-500";
+                resultTimeEl.className = "text-7xl md:text-8xl font-digital font-black mb-2 drop-shadow-lg";
+                waitMsgEl.className = "p-6 border-4 border-dashed rounded-xl bg-opacity-50 w-full max-w-sm";
+                
+                // 誤差による大げさな色分け・文字演出
                 if (diff <= 0.1) {
-                    diffEl.className = "text-4xl font-bold text-yellow-400 animate-pulse mt-4";
-                    diffEl.innerText = `誤差: ${diff.toFixed(2)}秒\n🎉 ピタリ賞レベル!! 🎉`;
+                    // 超ピタリ賞！（誤差0.1秒以内）
+                    finishedScreen.classList.add('bg-yellow-600', 'bg-opacity-90');
+                    titleEl.innerText = "PERFECT!!";
+                    titleEl.className = "text-6xl font-black mb-4 text-yellow-200 animate-pulse";
+                    resultTimeEl.classList.add('text-white');
+                    diffEl.innerHTML = `誤差: ${diff.toFixed(2)}秒<br><span class="text-4xl text-rainbow mt-6 block bg-black bg-opacity-50 py-2 rounded-lg">🎉 ピタリ賞!! 🎉</span>`;
+                    diffEl.className = "text-3xl font-bold text-yellow-100 mt-4";
+                    waitMsgEl.classList.add('border-yellow-400', 'bg-yellow-800');
                     startConfetti();
                 } else if (diff <= 0.5) {
-                    diffEl.className = "text-3xl font-bold text-green-400 mt-4";
-                    diffEl.innerText += " (おしい！)";
+                    // おしい！（誤差0.5秒以内）
+                    finishedScreen.classList.add('bg-green-700', 'bg-opacity-90');
+                    titleEl.innerText = "EXCELLENT!";
+                    titleEl.className = "text-5xl font-black mb-4 text-green-300";
+                    resultTimeEl.classList.add('text-white');
+                    diffEl.innerHTML = `誤差: ${diff.toFixed(2)}秒<br><span class="text-3xl mt-6 block text-yellow-300">おしい！高記録！</span>`;
+                    diffEl.className = "text-3xl font-bold text-green-100 mt-4";
+                    waitMsgEl.classList.add('border-green-400', 'bg-green-800');
                 } else {
-                    diffEl.className = "text-2xl font-bold text-gray-400 mt-4";
+                    // 残念...
+                    finishedScreen.classList.add('bg-red-900', 'bg-opacity-90');
+                    titleEl.innerText = "TOO BAD...";
+                    titleEl.className = "text-5xl font-black mb-4 text-red-400";
+                    resultTimeEl.classList.add('text-gray-300');
+                    diffEl.innerHTML = `誤差: ${diff.toFixed(2)}秒<br><span class="text-2xl mt-6 block text-red-300">修行が足りないぞ！</span>`;
+                    diffEl.className = "text-2xl font-bold text-red-200 mt-4";
+                    waitMsgEl.classList.add('border-red-400', 'bg-red-800');
                 }
 
             }, 1000);
