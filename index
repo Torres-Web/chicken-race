@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TIME CHICKEN RACE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #0f0;
+            --neon-red: #f00;
+            --neon-blue: #0ff;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #050510;
+            color: #fff;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        .font-digital {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .neon-text-green {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-green), 0 0 40px var(--neon-green), 0 0 80px var(--neon-green);
+        }
+        .neon-text-red {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-red), 0 0 40px var(--neon-red), 0 0 80px var(--neon-red);
+        }
+        .neon-text-blue {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue), 0 0 80px var(--neon-blue);
+        }
+        .neon-box {
+            box-shadow: 0 0 10px var(--neon-blue), inset 0 0 10px var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+        }
+        .btn-neon {
+            background: transparent;
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green) inset, 0 0 10px var(--neon-green);
+            transition: all 0.2s;
+        }
+        .btn-neon:hover, .btn-neon:active {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-green) inset, 0 0 20px var(--neon-green);
+        }
+        .btn-stop {
+            background: transparent;
+            border: 4px solid var(--neon-red);
+            color: var(--neon-red);
+            box-shadow: 0 0 20px var(--neon-red) inset, 0 0 20px var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red);
+        }
+        .btn-stop:active {
+            background: var(--neon-red);
+            color: #000;
+            box-shadow: 0 0 40px var(--neon-red) inset, 0 0 40px var(--neon-red);
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            20% { transform: scale(1.1); }
+            40% { transform: scale(1); }
+            60% { transform: scale(1.1); }
+            80% { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+        .animate-heartbeat {
+            animation: heartbeat 1s infinite;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: flex; }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- 背景装飾 -->
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1] opacity-20" style="background: radial-gradient(circle at center, #1a1a3a 0%, #050510 100%);"></div>
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1]" style="background-image: linear-gradient(0deg, transparent 24%, rgba(0, 255, 255, 0.1) 25%, rgba(0, 255, 255, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 255, 255, 0.1) 75%, rgba(0, 255, 255, 0.1) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 255, 255, 0.1) 25%, rgba(0, 255, 255, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 255, 255, 0.1) 75%, rgba(0, 255, 255, 0.1) 76%, transparent 77%, transparent); background-size: 50px 50px;"></div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- モーダル -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 border-2 border-blue-500 rounded-xl p-6 max-w-sm w-full text-center neon-box">
+            <h3 id="modal-title" class="text-xl font-bold mb-4 neon-text-blue">Message</h3>
+            <p id="modal-message" class="mb-6 leading-relaxed"></p>
+            <button onclick="closeModal()" class="px-6 py-2 rounded font-bold btn-neon w-full">OK</button>
+        </div>
+    </div>
+
+    <!-- ==================== TOP SCREEN ==================== -->
+    <div id="screen-top" class="screen active flex-col items-center justify-center w-full max-w-md">
+        <h1 class="text-4xl md:text-5xl font-digital font-black mb-2 neon-text-blue text-center leading-tight">TIME CHICKEN<br>RACE</h1>
+        <p class="text-gray-400 mb-12 text-sm text-center">ピタリ賞を狙え！体内時計バトル</p>
+        
+        <div class="flex flex-col gap-6 w-full px-4">
+            <button onclick="navTo('host-setup')" class="py-4 rounded-xl font-bold text-xl btn-neon w-full tracking-wider">ホストになる<br><span class="text-xs font-normal">（プロジェクター投影用）</span></button>
+            <button onclick="showModal('参加方法', 'スマホの標準カメラアプリを開いて、プロジェクターに映し出されたQRコードを読み取ってください！')" class="py-4 rounded-xl font-bold text-xl btn-neon w-full tracking-wider border-[var(--neon-green)] text-[var(--neon-green)]" style="border-color: #ff00ff; color: #ff00ff; box-shadow: 0 0 10px #ff00ff inset, 0 0 10px #ff00ff;">参加する<br><span class="text-xs font-normal">（スマホ操作用）</span></button>
+        </div>
+    </div>
+
+    <!-- ==================== HOST SCREENS ==================== -->
+    <div id="screen-host-setup" class="screen flex-col items-center justify-center w-full max-w-2xl w-full">
+        <h2 class="text-3xl font-bold mb-8 neon-text-blue">ゲーム設定</h2>
+        <div class="w-full bg-gray-900 p-8 rounded-2xl neon-box flex flex-col items-center">
+            
+            <label class="block text-gray-300 mb-2">目標タイム（秒）</label>
+            <div class="flex items-center gap-4 mb-8">
+                <button onclick="adjustTarget(-1)" class="w-12 h-12 rounded-full bg-gray-700 text-xl font-bold">-</button>
+                <input type="number" id="host-target-time" value="10.0" step="0.1" class="w-32 bg-gray-800 border border-gray-700 rounded-lg p-4 text-center text-3xl font-digital text-white focus:outline-none" readonly>
+                <button onclick="adjustTarget(1)" class="w-12 h-12 rounded-full bg-gray-700 text-xl font-bold">+</button>
+            </div>
+
+            <button onclick="generateQR()" class="w-full py-4 rounded-xl font-bold text-xl btn-neon">QRコードを作成</button>
+            <button onclick="navTo('top')" class="mt-4 text-gray-500 underline">戻る</button>
+        </div>
+    </div>
+
+    <div id="screen-host-lobby" class="screen flex-col items-center justify-center w-full max-w-4xl py-10 h-screen overflow-hidden">
+        <h2 class="text-4xl font-bold mb-2 neon-text-green text-center">参加者を招待</h2>
+        <p class="text-gray-400 mb-8 text-center text-xl">スマホのカメラでこのQRコードを読み取ってください</p>
+        
+        <div class="bg-white p-4 rounded-xl mb-8" id="qrcode-container"></div>
+        
+        <div class="text-center mb-12">
+            <p class="text-gray-400">目標タイム</p>
+            <h2 id="display-target-time" class="text-5xl font-digital neon-text-blue">10.00 SEC</h2>
+        </div>
+
+        <button onclick="navTo('host-projector')" class="w-full max-w-md py-5 rounded-xl font-bold text-2xl btn-neon animate-heartbeat">全員の準備ができたら次へ</button>
+    </div>
+
+    <div id="screen-host-projector" class="screen flex-col items-center justify-center w-full max-w-4xl h-screen">
+        <h1 id="projector-text" class="text-7xl md:text-9xl font-digital font-black mb-12 neon-text-blue text-center leading-tight">ARE YOU<br>READY?</h1>
+        
+        <button onclick="startHostCountdown()" id="btn-host-start" class="mt-12 py-6 px-16 rounded-xl font-bold text-4xl btn-neon">カウントダウン開始</button>
+        <button onclick="navTo('top')" class="mt-12 text-gray-500 underline">最初に戻る</button>
+    </div>
+
+
+    <!-- ==================== GUEST SCREENS ==================== -->
+    <div id="screen-guest-ready" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center">
+        <h2 class="text-3xl font-bold mb-4 neon-text-green">準備完了！</h2>
+        <p class="text-xl text-gray-300 mb-8">目標タイム: <span id="ready-target-display" class="font-digital text-3xl text-white">10.00</span> 秒</p>
+        
+        <button onclick="startGuestTimer()" class="w-64 h-64 rounded-full font-black text-5xl btn-neon flex items-center justify-center select-none" style="outline: none; -webkit-tap-highlight-color: transparent;">
+            START
+        </button>
+        <p class="mt-8 text-gray-400">プロジェクターの「START!」の<br>合図に合わせて押してください</p>
+    </div>
+
+    <div id="screen-guest-playing" class="screen flex-col items-center justify-center w-full h-screen px-4 pb-20">
+        <p class="text-xl text-gray-400 mb-2">TARGET: <span id="guest-target-display" class="font-digital font-bold text-white">10.00</span>s</p>
+        
+        <div class="flex items-baseline justify-center mb-12 h-32">
+            <span id="stopwatch-display" class="text-7xl font-digital font-black neon-text-blue">0.00</span>
+        </div>
+
+        <button id="btn-stop-timer" class="w-64 h-64 rounded-full font-black text-4xl btn-stop flex items-center justify-center select-none" style="outline: none; -webkit-tap-highlight-color: transparent;">
+            STOP!
+        </button>
+
+        <p class="mt-12 text-sm text-gray-500 text-center">※3秒経過すると時間が隠れます。<br>感覚を研ぎ澄ませ！</p>
+    </div>
+
+    <div id="screen-guest-finished" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center">
+        <h2 class="text-4xl font-black mb-4 text-white">RESULT</h2>
+        
+        <div class="mb-8">
+            <p class="text-gray-400 text-lg mb-1">あなたの記録</p>
+            <h1 id="result-time" class="text-7xl font-digital font-black neon-text-blue mb-2">10.00s</h1>
+            <p id="result-diff" class="text-2xl font-bold"></p>
+        </div>
+
+        <div class="p-6 border-2 border-dashed border-gray-600 rounded-xl bg-gray-900 bg-opacity-50">
+            <p class="text-lg text-gray-400 mb-2">司会者の指示があるまで</p>
+            <p class="text-2xl font-bold text-yellow-400 animate-pulse">この画面のまま待機！</p>
+        </div>
+
+        <button onclick="navTo('guest-ready')" class="mt-8 py-3 px-8 rounded-full border border-gray-500 text-gray-300 hover:bg-gray-800 transition">もう一度挑戦する</button>
+        <button onclick="navTo('top')" class="mt-4 text-gray-500 underline text-sm">トップに戻る</button>
+    </div>
+
+
+    <script>
+        // --- 共通ステータス ---
+        let targetTime = 10.0;
+        
+        // --- ゲスト用ステータス ---
+        let stopwatchStartTime = 0;
+        let stopwatchRAF = null;
+        let myStoppedTime = null;
+        let isBlinded = false;
+
+        // --- ユーティリティ関数 ---
+        window.navTo = (screenName) => {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(`screen-${screenName}`).classList.add('active');
+        };
+
+        window.showModal = (title, message) => {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('modal').classList.add('hidden');
+        };
+
+        // --- ホスト用関数 ---
+        window.adjustTarget = (delta) => {
+            targetTime += delta;
+            if(targetTime < 3.0) targetTime = 3.0; // 最小3秒
+            if(targetTime > 60.0) targetTime = 60.0;
+            document.getElementById('host-target-time').value = targetTime.toFixed(1);
+        };
+
+        window.generateQR = () => {
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = ''; // クリア
+            
+            // 現在のURLにパラメータを付与してQR用URLを作成
+            const baseUrl = window.location.href.split('?')[0];
+            const joinUrl = `${baseUrl}?t=${targetTime}`;
+
+            // QRコードの生成
+            new QRCode(container, {
+                text: joinUrl,
+                width: 250,
+                height: 250,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            document.getElementById('display-target-time').innerText = `${targetTime.toFixed(2)} SEC`;
+            navTo('host-lobby');
+        };
+
+        window.startHostCountdown = () => {
+            const btn = document.getElementById('btn-host-start');
+            const text = document.getElementById('projector-text');
+            btn.classList.add('hidden');
+            
+            let count = 3;
+            text.classList.remove('neon-text-blue');
+            text.classList.add('neon-text-red');
+            text.innerText = count;
+
+            const timer = setInterval(() => {
+                count--;
+                if(count > 0) {
+                    text.innerText = count;
+                } else if(count === 0) {
+                    text.classList.remove('neon-text-red');
+                    text.classList.add('neon-text-green');
+                    text.innerText = "START!";
+                } else {
+                    clearInterval(timer);
+                    text.classList.remove('neon-text-green');
+                    text.classList.add('neon-text-blue');
+                    text.innerHTML = "MEASURING...<br><span class='text-4xl text-gray-400'>皆さんがストップするのを待っています</span>";
+                    
+                    // 終わったあとにドラムロールボタンを出す
+                    setTimeout(() => {
+                        btn.classList.remove('hidden');
+                        btn.innerText = "結果発表演出 (紙吹雪)";
+                        btn.onclick = () => {
+                            text.innerHTML = "WINNER!!<br><span class='text-4xl text-gray-400'>一番誤差が少なかった人は...？</span>";
+                            startConfetti();
+                        };
+                    }, 5000);
+                }
+            }, 1000);
+        };
+
+
+        // --- ゲスト用関数 ---
+        function checkGuestMode() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('t')) {
+                // パラメータがあればゲストモードとして起動
+                targetTime = parseFloat(params.get('t'));
+                if (isNaN(targetTime)) targetTime = 10.0;
+                
+                document.getElementById('ready-target-display').innerText = targetTime.toFixed(2);
+                navTo('guest-ready');
+            }
+        }
+
+        window.startGuestTimer = () => {
+            navTo('guest-playing');
+            document.getElementById('guest-target-display').innerText = targetTime.toFixed(2);
+            stopwatchStartTime = performance.now();
+            isBlinded = false;
+            myStoppedTime = null;
+            
+            const display = document.getElementById('stopwatch-display');
+            display.classList.remove('neon-text-red');
+            display.classList.add('neon-text-blue');
+            
+            // ボタンのイベントリスナー（タッチとクリック両対応）
+            const btn = document.getElementById('btn-stop-timer');
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            const stopHandler = (e) => {
+                e.preventDefault();
+                if(myStoppedTime === null) {
+                    stopGuestTimer();
+                }
+            };
+            newBtn.addEventListener('mousedown', stopHandler);
+            newBtn.addEventListener('touchstart', stopHandler, {passive: false});
+
+            function updateTimer(currentTime) {
+                if (myStoppedTime !== null) return; 
+
+                const elapsed = currentTime - stopwatchStartTime;
+                const elapsedSec = elapsed / 1000;
+
+                // 3秒でブラインド（隠す）演出
+                if (elapsedSec >= 3.0 && !isBlinded) {
+                    isBlinded = true;
+                    display.innerText = "?.??";
+                    display.classList.remove('neon-text-blue');
+                    display.classList.add('text-gray-500');
+                } else if (!isBlinded) {
+                    display.innerText = elapsedSec.toFixed(2);
+                }
+
+                stopwatchRAF = requestAnimationFrame(updateTimer);
+            }
+            stopwatchRAF = requestAnimationFrame(updateTimer);
+        }
+
+        function stopGuestTimer() {
+            if(myStoppedTime !== null) return;
+            const stopTimePerf = performance.now();
+            const elapsed = stopTimePerf - stopwatchStartTime;
+            myStoppedTime = elapsed / 1000; // 秒に変換
+            
+            if (stopwatchRAF) cancelAnimationFrame(stopwatchRAF);
+
+            const display = document.getElementById('stopwatch-display');
+            display.innerText = myStoppedTime.toFixed(2);
+            display.classList.remove('text-gray-500', 'neon-text-blue');
+            display.classList.add('neon-text-red');
+            
+            // 結果計算
+            const diff = Math.abs(targetTime - myStoppedTime);
+            
+            setTimeout(() => {
+                navTo('guest-finished');
+                document.getElementById('result-time').innerText = `${myStoppedTime.toFixed(2)}s`;
+                
+                const diffEl = document.getElementById('result-diff');
+                diffEl.innerText = `誤差: ${diff.toFixed(2)}秒`;
+                
+                // 誤差による色分け演出
+                if (diff <= 0.1) {
+                    diffEl.className = "text-4xl font-bold text-yellow-400 animate-pulse mt-4";
+                    diffEl.innerText = `誤差: ${diff.toFixed(2)}秒\n🎉 ピタリ賞レベル!! 🎉`;
+                    startConfetti();
+                } else if (diff <= 0.5) {
+                    diffEl.className = "text-3xl font-bold text-green-400 mt-4";
+                    diffEl.innerText += " (おしい！)";
+                } else {
+                    diffEl.className = "text-2xl font-bold text-gray-400 mt-4";
+                }
+
+            }, 1000);
+        }
+
+        // --- Confetti (紙吹雪) アニメーション ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confettis = [];
+        let confettiAnimationId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startConfetti() {
+            confettis = [];
+            const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff'];
+            for (let i = 0; i < 150; i++) {
+                confettis.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vy: Math.random() * 5 + 2,
+                    vx: Math.random() * 4 - 2,
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 10 - 5
+                });
+            }
+            if (!confettiAnimationId) {
+                renderConfetti();
+            }
+        }
+
+        function renderConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let active = false;
+            confettis.forEach(c => {
+                c.y += c.vy;
+                c.x += c.vx;
+                c.rot += c.rotSpeed;
+                if (c.y < canvas.height) active = true;
+
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.rot * Math.PI / 180);
+                ctx.fillStyle = c.color;
+                ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+                ctx.restore();
+            });
+
+            if (active) {
+                confettiAnimationId = requestAnimationFrame(renderConfetti);
+            } else {
+                confettiAnimationId = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // 起動時のURLチェック (QRコードから開いたかどうかの判定)
+        window.onload = checkGuestMode;
+
+    </script>
+</body>
+</html>
