@@ -171,7 +171,6 @@
 
 
     <!-- ==================== GUEST SCREENS ==================== -->
-    <!-- 名前入力画面 (NEW) -->
     <div id="screen-guest-name" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center">
         <h2 class="text-3xl font-bold mb-8 neon-text-green">エントリー</h2>
         <div class="w-full max-w-sm bg-gray-900 p-6 rounded-2xl neon-box">
@@ -206,6 +205,7 @@
         <p class="mt-12 text-sm text-gray-500 text-center">※3秒経過すると時間が隠れます。<br>感覚を研ぎ澄ませ！</p>
     </div>
 
+    <!-- ここが表示されなくなっていた部分です -->
     <div id="screen-guest-finished" class="screen flex-col items-center justify-center w-full h-screen px-4 text-center transition-colors duration-500">
         <h2 id="result-title" class="text-4xl font-black mb-4 text-white">RESULT</h2>
         
@@ -215,7 +215,7 @@
             <p id="result-diff" class="text-3xl font-bold"></p>
         </div>
 
-        <div id="wait-message" class="p-6 border-4 border-dashed rounded-xl bg-opacity-50">
+        <div id="wait-message" class="p-6 border-4 border-dashed rounded-xl bg-opacity-50 w-full max-w-sm">
             <p class="text-xl font-bold text-white mb-2">司会者の指示があるまで</p>
             <p class="text-3xl font-black text-white animate-pulse">この画面のまま待機！</p>
         </div>
@@ -420,8 +420,8 @@
 
                 resultTimeEl.innerText = `${myStoppedTime.toFixed(2)}s`;
                 
-                // クラスを一旦リセット（色を引き継がないようにするため）
-                finishedScreen.className = "screen flex-col items-center justify-center w-full h-screen px-4 text-center transition-colors duration-500";
+                // バグ修正箇所: 「active」クラスを残したまま色だけリセットするように修正しました！
+                finishedScreen.className = "screen active flex-col items-center justify-center w-full h-screen px-4 text-center transition-colors duration-500";
                 resultTimeEl.className = "text-7xl md:text-8xl font-digital font-black mb-2 drop-shadow-lg";
                 waitMsgEl.className = "p-6 border-4 border-dashed rounded-xl bg-opacity-50 w-full max-w-sm";
                 
@@ -456,7 +456,7 @@
                     waitMsgEl.classList.add('border-red-400', 'bg-red-800');
                 }
 
-            }, 1000);
+            }, 1000); // ストップして1秒後に結果画面へ移行
         }
 
         // --- Confetti (紙吹雪) アニメーション ---
